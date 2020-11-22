@@ -220,6 +220,7 @@ var UITree = /*#__PURE__*/function (_Component) {
     };
 
     _this.dragStart = function (id, dom, e) {
+      console.log("id, dom, e", id, dom);
       if (e.button !== 0) return;
       _this.dragging = {
         id: id,
