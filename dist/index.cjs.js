@@ -187,6 +187,7 @@ var UITree = /*#__PURE__*/function (_Component) {
       tree$$1.updateNodesPosition();
       return {
         tree: tree$$1,
+        treeBackup: {},
         dragging: {
           id: null,
           x: null,
@@ -225,8 +226,9 @@ var UITree = /*#__PURE__*/function (_Component) {
     };
 
     _this.dragStart = function (id, dom, e) {
-      console.log("id, dom, e", id, dom);
-      if (e.button !== 0) return;
+      var shouldStartDragNode = _this.props.shouldStartDrag && _this.props.shouldStartDrag(_this.state.tree.getIndex(id).node);
+
+      if (e.button !== 0 || !shouldStartDragNode) return;
       _this.dragging = {
         id: id,
         w: dom.offsetWidth,
@@ -239,6 +241,16 @@ var UITree = /*#__PURE__*/function (_Component) {
       _this._offsetX = e.clientX;
       _this._offsetY = e.clientY;
       _this._start = true;
+      var treeBackup = new tree(JSON.parse(JSON.stringify(_this.state.tree.obj)));
+      treeBackup.isNodeCollapsed = _this.state.tree.isNodeCollapsed;
+      treeBackup.renderNode = _this.state.tree.renderNode;
+      treeBackup.changeNodeCollapsed = _this.state.tree.changeNodeCollapsed;
+      treeBackup.updateNodesPosition();
+
+      _this.setState({
+        treeBackup: treeBackup
+      });
+
       window.addEventListener('mousemove', _this.drag);
       window.addEventListener('mouseup', _this.dragEnd);
     };
@@ -342,7 +354,16 @@ var UITree = /*#__PURE__*/function (_Component) {
         }
       });
 
-      _this.change(_this.state.tree);
+      if (_this.props.shouldDropNode) {
+        if (_this.props.shouldDropNode(_this.state.tree.obj)) {
+          _this.change(_this.state.tree);
+        } else {
+          _this.setState({
+            tree: _this.state.treeBackup,
+            treeBackup: {}
+          });
+        }
+      }
 
       window.removeEventListener('mousemove', _this.drag);
       window.removeEventListener('mouseup', _this.dragEnd);
@@ -405,7 +426,9 @@ UITree.propTypes = {
   tree: PropTypes.object.isRequired,
   paddingLeft: PropTypes.number,
   renderNode: PropTypes.func.isRequired,
-  renderDraggedDom: PropTypes.bool
+  renderDraggedDom: PropTypes.bool,
+  shouldStartDrag: PropTypes.func,
+  shouldDropNode: PropTypes.func
 };
 UITree.defaultProps = {
   paddingLeft: 20,
